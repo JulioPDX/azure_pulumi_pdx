@@ -41,7 +41,9 @@ VNETS = {
 for vnet, values in VNETS.items():
     net = network.VirtualNetwork(
         vnet,
-        address_space=network.AddressSpaceArgs(address_prefixes=[values["vnet_address"]]),
+        address_space=network.AddressSpaceArgs(
+            address_prefixes=[values["vnet_address"]]
+        ),
         virtual_network_name=vnet,
         resource_group_name=resource_group.name,
         location=values["region"],
