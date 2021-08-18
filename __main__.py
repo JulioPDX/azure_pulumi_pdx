@@ -2,6 +2,7 @@
 
 import os
 import pulumi
+from pulumi import Output
 from pulumi_azure_native import resources, network, compute
 from infra.vms import VM_DATA
 from infra.vnets import VNETS
@@ -38,7 +39,7 @@ for vnet, values in VNETS.items():
     virtual_network_link = network.VirtualNetworkLink(
         f"{vnet}-link",
         location="Global",
-        private_zone_name="azure_pulumi.com",
+        private_zone_name=private_zone.name,
         registration_enabled=True,
         resource_group_name=resource_group.name,
         virtual_network=network.SubResourceArgs(id=net.id),
@@ -53,6 +54,7 @@ for vnet, values in VNETS.items():
             subnet_name=subnet["name"],
             virtual_network_name=net.name,
         )
+        subs[subnet["name"]] = Output.concat(sub.id)
 
 # Create all the things for VM
 for k, v in VM_DATA.items():
@@ -76,7 +78,7 @@ for k, v in VM_DATA.items():
                 name="ipconfig1",
                 public_ip_address=pip.ip_configuration,
                 subnet=network.SubnetArgs(
-                    id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{RG_NAME}/providers/Microsoft.Network/virtualNetworks/{v['nic_vnet']}/subnets/{v['nic_subnet']}",
+                    id=subs[v["nic_subnet"]],
                 ),
             )
         ],
@@ -85,7 +87,7 @@ for k, v in VM_DATA.items():
         resource_group_name=resource_group.name,
     )
     virtual_machine = compute.VirtualMachine(
-        f"{v} virtualMachine build",
+        f"{k}-virtualMachine build",
         hardware_profile=compute.HardwareProfileArgs(
             vm_size="Standard_D1_v2",
         ),
