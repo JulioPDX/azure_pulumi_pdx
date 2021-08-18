@@ -4,47 +4,26 @@ import os
 import pulumi
 from pulumi_azure_native import resources, network, compute
 from infra.vms import VM_DATA
+from infra.vnets import VNETS
 
-rg_name = "juliopdx_rg_dev"
-# from pulumi_azure_native.resources import resource
+RG_NAME = "juliopdx_rg_dev"
 
 # Create an Azure Resource Group
-# resource_group = resources.ResourceGroup("juliopdx_rg_dev")
-resource_group = resources.ResourceGroup("juliopdx_rg_dev",resource_group_name=rg_name)
+resource_group = resources.ResourceGroup("juliopdx_rg_dev", resource_group_name=RG_NAME)
 
 pulumi.export("resource_group_nm", resource_group.name)
 
-VNETS = {
-    "CoreServicesVnet": {
-        "region": "westus",
-        "vnet_address": "10.20.0.0/16",
-        "subnets": [
-            {"name": "GatewaySubnet", "subnet": "10.20.0.0/27"},
-            {"name": "SharedServicesSubnet", "subnet": "10.20.10.0/24"},
-            {"name": "DatabaseSubnet", "subnet": "10.20.20.0/24"},
-            {"name": "PublicWebServiceSubnet", "subnet": "10.20.30.0/24"},
-        ],
-    },
-    "ManufacturingVnet": {
-        "region": "northeurope",
-        "vnet_address": "10.30.0.0/16",
-        "subnets": [
-            {"name": "ManufacturingSystemSubnet", "subnet": "10.30.10.0/24"},
-            {"name": "SensorSubnet1", "subnet": "10.30.20.0/24"},
-            {"name": "SensorSubnet2", "subnet": "10.30.21.0/24"},
-            {"name": "SensorSubnet3", "subnet": "10.30.22.0/24"},
-        ],
-    },
-    "ResearchVnet": {
-        "region": "westindia",
-        "vnet_address": "10.40.0.0/16",
-        "subnets": [
-            {"name": "ResearchSystemSubnet", "subnet": "10.40.0.0/24"},
-        ],
-    },
-}
+# Private DNS Zone
+private_zone = network.PrivateZone(
+    "privateZone",
+    location="Global",
+    private_zone_name="azure_pulumi.com",
+    resource_group_name=resource_group.name,
+)
 
-# Create VNETs and Subnets
+subs = {}
+
+# Create VNETs
 for vnet, values in VNETS.items():
     net = network.VirtualNetwork(
         vnet,
@@ -55,7 +34,17 @@ for vnet, values in VNETS.items():
         resource_group_name=resource_group.name,
         location=values["region"],
     )
-# for vnet, values in VNETS.items():
+    # Create virtual network links to get auto dns registration in private zone
+    virtual_network_link = network.VirtualNetworkLink(
+        f"{vnet}-link",
+        location="Global",
+        private_zone_name="azure_pulumi.com",
+        registration_enabled=True,
+        resource_group_name=resource_group.name,
+        virtual_network=network.SubResourceArgs(id=net.id),
+        virtual_network_link_name=f"{vnet}-NetworkLink",
+    )
+    # Create subnets under each VNET
     for subnet in values["subnets"]:
         sub = network.Subnet(
             subnet["name"],
@@ -65,59 +54,36 @@ for vnet, values in VNETS.items():
             virtual_network_name=net.name,
         )
 
-# Private DNS Zone
-private_zone = network.PrivateZone(
-    "privateZone",
-    location="Global",
-    private_zone_name="azure_pulumi.com",
-    resource_group_name=resource_group.name,
-)
-
-
-# Virtual Network Links to Private DNS
-# Having a serious issue using resource_group.name here
-# ... very odd
-for vnet, values in VNETS.items():
-    virtual_network_link = network.VirtualNetworkLink(
-        vnet,
-        location="Global",
-        private_zone_name="azure_pulumi.com",
-        registration_enabled=True,
-        resource_group_name=resource_group.name,
-        virtual_network=network.SubResourceArgs(
-            id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{rg_name}/providers/Microsoft.Network/virtualNetworks/{vnet}"
-        ),
-        virtual_network_link_name=f"{vnet}-NetworkLink",
-    )
-
+# Create all the things for VM
 for k, v in VM_DATA.items():
-    public_ip_address = network.PublicIPAddress(
+    pip = network.PublicIPAddress(
         f"{k}-publicIPAddress",
         location=v["location"],
         public_ip_address_name=f"{k}-pip",
-        resource_group_name=rg_name,
+        resource_group_name=resource_group.name,
     )
-
-    network_interface = network.NetworkInterface(
+    # Need to grab subnet id real quick to make a link
+    # temp_subnet = network.get_subnet(
+    #     subnet_name=v["nic_subnet"],
+    #     virtual_network_name=v["nic_vnet"],
+    #     resource_group_name=v["rg_name"],
+    # )
+    nic = network.NetworkInterface(
         f"{k}-networkInterface",
         enable_accelerated_networking=True,
         ip_configurations=[
             network.NetworkInterfaceIPConfigurationArgs(
                 name="ipconfig1",
-                public_ip_address=network.PublicIPAddressArgs(
-                    id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{rg_name}/providers/Microsoft.Network/publicIPAddresses/{k}-pip",
-                ),
+                public_ip_address=pip.ip_configuration,
                 subnet=network.SubnetArgs(
-                    id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{rg_name}/providers/Microsoft.Network/virtualNetworks/{v['nic_vnet']}/subnets/{v['nic_subnet']}",
+                    id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{RG_NAME}/providers/Microsoft.Network/virtualNetworks/{v['nic_vnet']}/subnets/{v['nic_subnet']}",
                 ),
             )
         ],
         location=v["location"],
         network_interface_name=v["nic_name"],
-        resource_group_name=rg_name,
+        resource_group_name=resource_group.name,
     )
-
-for k, v in VM_DATA.items():
     virtual_machine = compute.VirtualMachine(
         f"{v} virtualMachine build",
         hardware_profile=compute.HardwareProfileArgs(
@@ -127,7 +93,7 @@ for k, v in VM_DATA.items():
         network_profile=compute.NetworkProfileArgs(
             network_interfaces=[
                 compute.NetworkInterfaceReferenceArgs(
-                    id=f"/subscriptions/{os.environ['SUB_ID']}/resourceGroups/{rg_name}/providers/Microsoft.Network/networkInterfaces/{v['nic_name']}",
+                    id=nic.id,
                     primary=True,
                 )
             ],
@@ -137,7 +103,7 @@ for k, v in VM_DATA.items():
             admin_username="juliopdx",
             computer_name=k,
         ),
-        resource_group_name=rg_name,
+        resource_group_name=resource_group.name,
         storage_profile=compute.StorageProfileArgs(
             image_reference=compute.ImageReferenceArgs(
                 offer="WindowsServer",
