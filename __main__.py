@@ -1,6 +1,5 @@
-"""An Azure RM Python Pulumi program"""
+"""A Network Engineer trying to learn cloud and IaC"""
 
-import os
 import pulumi
 from pulumi import Output
 from pulumi_azure_native import resources, network, compute
@@ -54,6 +53,7 @@ for vnet, values in VNETS.items():
             subnet_name=subnet["name"],
             virtual_network_name=net.name,
         )
+        # Neat trick to grab the subnet IDs and add them to dict
         subs[subnet["name"]] = Output.concat(sub.id)
 
 # Create all the things for VM
@@ -64,12 +64,6 @@ for k, v in VM_DATA.items():
         public_ip_address_name=f"{k}-pip",
         resource_group_name=resource_group.name,
     )
-    # Need to grab subnet id real quick to make a link
-    # temp_subnet = network.get_subnet(
-    #     subnet_name=v["nic_subnet"],
-    #     virtual_network_name=v["nic_vnet"],
-    #     resource_group_name=v["rg_name"],
-    # )
     nic = network.NetworkInterface(
         f"{k}-networkInterface",
         enable_accelerated_networking=True,
