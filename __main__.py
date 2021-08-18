@@ -22,6 +22,7 @@ private_zone = network.PrivateZone(
 )
 
 subs = {}
+local_vnets = {}
 
 # Create VNETs
 for vnet, values in VNETS.items():
@@ -34,6 +35,7 @@ for vnet, values in VNETS.items():
         resource_group_name=resource_group.name,
         location=values["region"],
     )
+    local_vnets[vnet] = Output.concat(net.id)
     # Create virtual network links to get auto dns registration in private zone
     virtual_network_link = network.VirtualNetworkLink(
         f"{vnet}-link",
@@ -56,6 +58,23 @@ for vnet, values in VNETS.items():
         # Neat trick to grab the subnet IDs and add them to dict
         subs[subnet["name"]] = Output.concat(sub.id)
 
+# VNET peering, fairly static
+vnet_peering = network.VirtualNetworkPeering(
+    "Test-VNET-peer",
+    resource_group_name=resource_group.name,
+    virtual_network_name="CoreServicesVnet",
+    remote_virtual_network=network.SubResourceArgs(id=local_vnets["ResearchVnet"]),
+    virtual_network_peering_name="peer",
+)
+
+second_vnet_peering = network.VirtualNetworkPeering(
+    "Test-VNET-peer2",
+    resource_group_name=resource_group.name,
+    virtual_network_name="ResearchVnet",
+    remote_virtual_network=network.SubResourceArgs(id=local_vnets["CoreServicesVnet"]),
+    virtual_network_peering_name="peer",
+)
+
 # Create all the things for VM
 for k, v in VM_DATA.items():
     pip = network.PublicIPAddress(
@@ -69,8 +88,8 @@ for k, v in VM_DATA.items():
         enable_accelerated_networking=True,
         ip_configurations=[
             network.NetworkInterfaceIPConfigurationArgs(
-                name="ipconfig1",
-                public_ip_address=pip.ip_configuration,
+                name=f"{k}ipconfig1",
+                public_ip_address=network.PublicIPAddressArgs(id=pip.id),
                 subnet=network.SubnetArgs(
                     id=subs[v["nic_subnet"]],
                 ),

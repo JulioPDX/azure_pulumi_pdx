@@ -13,4 +13,11 @@ VM_DATA = {
         "nic_subnet": "DatabaseSubnet",
         "location": "westus",
     },
+    "testvm3": {
+        "rg_name": "juliopdx_rg_dev",
+        "nic_name": "testvm3-nic",
+        "nic_vnet": "ResearchVnet",
+        "nic_subnet": "ResearchSystemSubnet",
+        "location": "westindia",
+    },
 }
