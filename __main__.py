@@ -88,7 +88,7 @@ for k, v in VM_DATA.items():
         enable_accelerated_networking=True,
         ip_configurations=[
             network.NetworkInterfaceIPConfigurationArgs(
-                name=f"{k}ipconfig1",
+                name="ipconfig1",
                 public_ip_address=network.PublicIPAddressArgs(id=pip.id),
                 subnet=network.SubnetArgs(
                     id=subs[v["nic_subnet"]],
@@ -114,7 +114,7 @@ for k, v in VM_DATA.items():
             ],
         ),
         os_profile=compute.OSProfileArgs(
-            admin_password="JulioPDX789!@#",
+            admin_password="JulioPDX789!@#", # Dont do this in prod... or ever, dont be me.
             admin_username="juliopdx",
             computer_name=k,
         ),
@@ -132,7 +132,7 @@ for k, v in VM_DATA.items():
                 managed_disk=compute.ManagedDiskParametersArgs(
                     storage_account_type="Standard_LRS",
                 ),
-                name=f"{k}osdisk",
+                name=f"{k}osdisk1",
             ),
         ),
         vm_name=k,
