@@ -151,27 +151,10 @@ pip_prefix = network.PublicIPPrefix("publicIPPrefix",
         tier="Regional",
     ))
 
-# pulumi.export("pip_prefix", pip_prefix)
-
-# nat_pip = network.PublicIPAddress(
-#     "nat-publicIPAddress",
-#     location="westus",
-#     public_ip_allocation_method="Static",
-#     public_ip_address_name="nat-pip",
-#     public_ip_prefix=network.SubResourceArgs(id=pip_prefix.id),
-#     resource_group_name=resource_group.name,
-#     sku=network.PublicIPAddressSkuArgs(
-#         name="Standard",
-#     ),
-# )
-
-# pulumi.export("nat_pip", nat_pip.public_ip_prefix)
-
 nat_gateway = network.NatGateway(
     "natGateway",
     location="westus",
     nat_gateway_name="natgateway",
-    # public_ip_addresses=[network.PublicIPAddressArgs(id=nat_pip.id)],
     public_ip_prefixes=[network.SubResourceArgs(
         id=pip_prefix.id,
     )],
