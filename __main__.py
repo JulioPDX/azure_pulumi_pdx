@@ -114,7 +114,7 @@ for k, v in VM_DATA.items():
             ],
         ),
         os_profile=compute.OSProfileArgs(
-            admin_password="JulioPDX789!@#", # Dont do this in prod... or ever, dont be me.
+            admin_password="JulioPDX789!@#",  # Dont do this in prod... or ever, dont be me.
             admin_username="juliopdx",
             computer_name=k,
         ),
@@ -137,3 +137,46 @@ for k, v in VM_DATA.items():
         ),
         vm_name=k,
     )
+
+
+### NAT Gateeway Practice ###
+pip_prefix = network.PublicIPPrefix("publicIPPrefix",
+    location="westus",
+    prefix_length=31,
+    public_ip_address_version="IPv4",
+    public_ip_prefix_name="test-ipprefix",
+    resource_group_name=resource_group.name,
+    sku=network.PublicIPPrefixSkuArgs(
+        name="Standard",
+        tier="Regional",
+    ))
+
+# pulumi.export("pip_prefix", pip_prefix)
+
+# nat_pip = network.PublicIPAddress(
+#     "nat-publicIPAddress",
+#     location="westus",
+#     public_ip_allocation_method="Static",
+#     public_ip_address_name="nat-pip",
+#     public_ip_prefix=network.SubResourceArgs(id=pip_prefix.id),
+#     resource_group_name=resource_group.name,
+#     sku=network.PublicIPAddressSkuArgs(
+#         name="Standard",
+#     ),
+# )
+
+# pulumi.export("nat_pip", nat_pip.public_ip_prefix)
+
+nat_gateway = network.NatGateway(
+    "natGateway",
+    location="westus",
+    nat_gateway_name="natgateway",
+    # public_ip_addresses=[network.PublicIPAddressArgs(id=nat_pip.id)],
+    public_ip_prefixes=[network.SubResourceArgs(
+        id=pip_prefix.id,
+    )],
+    resource_group_name=resource_group.name,
+    sku=network.NatGatewaySkuArgs(
+        name="Standard",
+    ),
+)
