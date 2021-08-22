@@ -140,7 +140,8 @@ for k, v in VM_DATA.items():
 
 
 ### NAT Gateeway Practice ###
-pip_prefix = network.PublicIPPrefix("publicIPPrefix",
+pip_prefix = network.PublicIPPrefix(
+    "publicIPPrefix",
     location="westus",
     prefix_length=31,
     public_ip_address_version="IPv4",
@@ -149,15 +150,18 @@ pip_prefix = network.PublicIPPrefix("publicIPPrefix",
     sku=network.PublicIPPrefixSkuArgs(
         name="Standard",
         tier="Regional",
-    ))
+    ),
+)
 
 nat_gateway = network.NatGateway(
     "natGateway",
     location="westus",
     nat_gateway_name="natgateway",
-    public_ip_prefixes=[network.SubResourceArgs(
-        id=pip_prefix.id,
-    )],
+    public_ip_prefixes=[
+        network.SubResourceArgs(
+            id=pip_prefix.id,
+        )
+    ],
     resource_group_name=resource_group.name,
     sku=network.NatGatewaySkuArgs(
         name="Standard",
