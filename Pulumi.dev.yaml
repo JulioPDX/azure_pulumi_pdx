@@ -1,2 +1,4 @@
 config:
   azure-native:location: EastUS2
+  azure_pulumi_pdx:passwd:
+    secure: AAABABBSqe4aIMe+EYTI4QNWbKBUi5fpP8WtCcQC7uUWyvLBQyyBtirfzA3JuA==
