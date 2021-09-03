@@ -286,7 +286,7 @@ virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleS
     platform_fault_domain_count=1,
     sku=compute.SkuArgs(
         capacity=5,
-        name="Standard_D2_v3",
+        name="Standard_A2_v2",
         tier="Standard",
     ),
     upgrade_policy=compute.UpgradePolicyArgs(
@@ -322,7 +322,7 @@ virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleS
                 caching="ReadWrite",
                 create_option="FromImage",
                 managed_disk=compute.VirtualMachineScaleSetManagedDiskParametersArgs(
-                    storage_account_type="Standard_LRS",
+                    storage_account_type="Premium_LRS",
                 ),
             ),
         ),
