@@ -285,7 +285,7 @@ virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleS
     single_placement_group=False,
     platform_fault_domain_count=1,
     sku=compute.SkuArgs(
-        capacity=2,
+        capacity=5,
         name="Standard_D2_v3",
         tier="Standard",
     ),
@@ -315,7 +315,7 @@ virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleS
             image_reference=compute.ImageReferenceArgs(
                 offer="UbuntuServer",
                 publisher="Canonical",
-                sku="18.04-LTS",
+                sku="20.04-LTS",
                 version="latest",
             ),
             os_disk=compute.VirtualMachineScaleSetOSDiskArgs(
