@@ -98,21 +98,21 @@ for vnet, values in VNETS.items():
         subs[subnet["name"]] = Output.concat(sub.id)
 
 # VNET peering, fairly static
-# vnet_peering = network.VirtualNetworkPeering(
-#     "Test-VNET-peer",
-#     resource_group_name=resource_group.name,
-#     virtual_network_name="CoreServicesVnet",
-#     remote_virtual_network=network.SubResourceArgs(id=local_vnets["ResearchVnet"]),
-#     virtual_network_peering_name="peer",
-# )
+vnet_peering = network.VirtualNetworkPeering(
+    "Test-VNET-peer",
+    resource_group_name=resource_group.name,
+    virtual_network_name="CoreServicesVnet",
+    remote_virtual_network=network.SubResourceArgs(id=local_vnets["ResearchVnet"]),
+    virtual_network_peering_name="peer",
+)
 
-# second_vnet_peering = network.VirtualNetworkPeering(
-#     "Test-VNET-peer2",
-#     resource_group_name=resource_group.name,
-#     virtual_network_name="ResearchVnet",
-#     remote_virtual_network=network.SubResourceArgs(id=local_vnets["CoreServicesVnet"]),
-#     virtual_network_peering_name="peer",
-# )
+second_vnet_peering = network.VirtualNetworkPeering(
+    "Test-VNET-peer2",
+    resource_group_name=resource_group.name,
+    virtual_network_name="ResearchVnet",
+    remote_virtual_network=network.SubResourceArgs(id=local_vnets["CoreServicesVnet"]),
+    virtual_network_peering_name="peer",
+)
 
 # Create all the things for VM
 for k, v in VM_DATA.items():
@@ -274,3 +274,109 @@ for k, v in VM_DATA_NO_PIP.items():
 #     resource_group_name=resource_group.name,
 #     virtual_hub_name=virtual_hub.name,
 # )
+
+vms_name = "juliopdx-vmss"
+
+virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleSet",
+    location="westus",
+    overprovision=False,
+    resource_group_name=resource_group.name,
+    single_placement_group=False,
+    platform_fault_domain_count=1,
+    sku=compute.SkuArgs(
+        capacity=2,
+        name="Standard_D2_v3",
+        tier="Standard",
+    ),
+    upgrade_policy=compute.UpgradePolicyArgs(
+        mode="Manual",
+    ),
+    virtual_machine_profile=compute.VirtualMachineScaleSetVMProfileArgs(
+        network_profile=compute.VirtualMachineScaleSetNetworkProfileArgs(
+            network_interface_configurations=[compute.VirtualMachineScaleSetNetworkConfigurationArgs(
+                enable_ip_forwarding=True,
+                ip_configurations=[compute.VirtualMachineScaleSetIPConfigurationArgs(
+                    name=vms_name,
+                    subnet=compute.ApiEntityReferenceArgs(
+                        id=subs["PublicWebServiceSubnet"],
+                    ),
+                )],
+                name=vms_name,
+                primary=True,
+            )],
+        ),
+        os_profile=compute.VirtualMachineScaleSetOSProfileArgs(
+            admin_password="JulioPDX789!@#",
+            admin_username="juliopdx",
+            computer_name_prefix="ado-ss",
+        ),
+        storage_profile=compute.VirtualMachineScaleSetStorageProfileArgs(
+            image_reference=compute.ImageReferenceArgs(
+                offer="UbuntuServer",
+                publisher="Canonical",
+                sku="18.04-LTS",
+                version="latest",
+            ),
+            os_disk=compute.VirtualMachineScaleSetOSDiskArgs(
+                caching="ReadWrite",
+                create_option="FromImage",
+                managed_disk=compute.VirtualMachineScaleSetManagedDiskParametersArgs(
+                    storage_account_type="Standard_LRS",
+                ),
+            ),
+        ),
+    ),
+    vm_scale_set_name=vms_name)
+
+vms_name1 = "vmssagentpool"
+
+virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleSet-1",
+    location="westus",
+    overprovision=False,
+    resource_group_name=resource_group.name,
+    single_placement_group=False,
+    platform_fault_domain_count=1,
+    sku=compute.SkuArgs(
+        capacity=5,
+        name="Standard_D2_v3",
+        tier="Standard",
+    ),
+    upgrade_policy=compute.UpgradePolicyArgs(
+        mode="Manual",
+    ),
+    virtual_machine_profile=compute.VirtualMachineScaleSetVMProfileArgs(
+        network_profile=compute.VirtualMachineScaleSetNetworkProfileArgs(
+            network_interface_configurations=[compute.VirtualMachineScaleSetNetworkConfigurationArgs(
+                enable_ip_forwarding=True,
+                ip_configurations=[compute.VirtualMachineScaleSetIPConfigurationArgs(
+                    name=vms_name1,
+                    subnet=compute.ApiEntityReferenceArgs(
+                        id=subs["PublicWebServiceSubnet"],
+                    ),
+                )],
+                name=vms_name1,
+                primary=True,
+            )],
+        ),
+        os_profile=compute.VirtualMachineScaleSetOSProfileArgs(
+            admin_password="JulioPDX789!@#",
+            admin_username="juliopdx",
+            computer_name_prefix="ado-ss",
+        ),
+        storage_profile=compute.VirtualMachineScaleSetStorageProfileArgs(
+            image_reference=compute.ImageReferenceArgs(
+                offer="UbuntuServer",
+                publisher="Canonical",
+                sku="18.04-LTS",
+                version="latest",
+            ),
+            os_disk=compute.VirtualMachineScaleSetOSDiskArgs(
+                caching="ReadWrite",
+                create_option="FromImage",
+                managed_disk=compute.VirtualMachineScaleSetManagedDiskParametersArgs(
+                    storage_account_type="Standard_LRS",
+                ),
+            ),
+        ),
+    ),
+    vm_scale_set_name=vms_name1)
