@@ -154,7 +154,7 @@ for k, v in VM_DATA.items():
             ],
         ),
         os_profile=compute.OSProfileArgs(
-            admin_password=config.require('passwd'),  # Dont do this in prod... or ever, dont be me.
+            admin_password=config.require('passwd'),
             admin_username="juliopdx",
             computer_name=k,
         ),
@@ -210,7 +210,7 @@ for k, v in VM_DATA_NO_PIP.items():
             ],
         ),
         os_profile=compute.OSProfileArgs(
-            admin_password=config.require('passwd'),  # Dont do this in prod... or ever, dont be me.
+            admin_password=config.require('passwd'),
             admin_username="juliopdx",
             computer_name=k,
         ),
