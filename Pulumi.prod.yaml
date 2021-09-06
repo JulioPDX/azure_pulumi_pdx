@@ -1,0 +1,5 @@
+config:
+  azure-native:location: EastUS2
+  azure_pulumi_pdx:passwd:
+    secure: AAABAIPZ7XwiVoHw4YMdWA8pUsF4bFLHTLoi2qkj7Rm+DWVLQnFLMMe1pH4kig==
+  azure_pulumi_pdx:rg_name: juliopdx_rg_prod

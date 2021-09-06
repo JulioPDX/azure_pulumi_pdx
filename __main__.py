@@ -7,10 +7,10 @@ from infra.vms import VM_DATA, VM_DATA_NO_PIP
 from infra.vnets import VNETS
 
 config = pulumi.Config()
-RG_NAME = "juliopdx_rg_dev"
+RG_NAME = config.require('rg_name')
 
 # Create an Azure Resource Group
-resource_group = resources.ResourceGroup("juliopdx_rg_dev", resource_group_name=RG_NAME)
+resource_group = resources.ResourceGroup(RG_NAME, resource_group_name=RG_NAME)
 
 pulumi.export("resource_group_nm", resource_group.name)
 
@@ -285,7 +285,7 @@ virtual_machine_scale_set = compute.VirtualMachineScaleSet("virtualMachineScaleS
     single_placement_group=False,
     platform_fault_domain_count=1,
     sku=compute.SkuArgs(
-        capacity=5,
+        capacity=3,
         name="Standard_B2s",
         tier="Standard",
     ),
